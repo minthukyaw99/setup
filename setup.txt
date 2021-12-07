@@ -1,0 +1,163 @@
+Set up Px4 with Intel Realsense
+
+1. download ubuntu-18.04.5-preinstalled-server-arm64+raspi4.img.xz from https://cdimage.ubuntu.com/releases/18.04/release/
+	1. run "unxz ubuntu-18.04.5-preinstalled-server-arm64+raspi4.img.xz"
+	2. we will get ubuntu-18.04.5-preinstalled-server-arm64+raspi4.img after unxz
+
+2. use etcher or BalenaEtcher to flush
+
+3. set up wifi
+	1. go to SD card
+	2. open network.config file
+	3. enter network info
+
+4. Install ros melodic -> follow the instruction from here: http://wiki.ros.org/melodic/Installation/Ubuntu
+	1. sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+	2. sudo apt install curl # if you haven't already installed curl
+	3. curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | sudo apt-key add -
+	4. sudo apt update
+	5. sudo apt install ros-melodic-ros-base
+	6. echo "source /opt/ros/melodic/setup.bash" >> ~/.bashrc
+	7. source ~/.bashrc
+	8. sudo apt install python-rosdep python-rosinstall python-rosinstall-generator python-wstool build-essential
+	9. sudo apt install python-rosdep
+	10. sudo rosdep init
+	11. rosdep update
+
+5. Install mavros -> https://docs.px4.io/master/en/ros/mavros_installation.html we will use source installation
+	1. sudo apt-get install python-catkin-tools python-rosinstall-generator -y
+	2. 
+		mkdir -p ~/catkin_ws/src
+		cd ~/catkin_ws
+		catkin init
+		wstool init src
+	3. wstool init ~/catkin_ws/src
+	4. rosinstall_generator --rosdistro melodic mavlink | tee /tmp/mavros.rosinstall
+	5. rosinstall_generator --upstream mavros | tee -a /tmp/mavros.rosinstall
+	6. 
+		wstool merge -t src /tmp/mavros.rosinstall
+		wstool update -t src -j4
+		rosdep install --from-paths src --ignore-src -y
+	7. ./src/mavros/mavros/scripts/install_geographiclib_datasets.sh
+	8. catkin build // if you are on ODROID xu4 2GB check ODROID install
+	9. source devel/setup.bash
+
+6. Install librealsense aka Intel Realsense T265 (follow instruction from here https://github.com/IntelRealSense/librealsense/blob/master/doc/installation.md)
+	1. sudo apt-get update && sudo apt-get upgrade && sudo apt-get dist-upgrade
+	2. git clone https://github.com/IntelRealSense/librealsense.git at root level.
+	3. sudo apt-get install git libssl-dev libusb-1.0-0-dev pkg-config libgtk-3-dev in librealsense root
+	4. sudo apt-get install libglfw3-dev libgl1-mesa-dev libglu1-mesa-dev at
+	5. ./scripts/setup_udev_rules.sh run this command in librealsense root
+	6. ./scripts/patch-realsense-ubuntu-lts.sh run this command in librealsense root
+	7. echo 'hid_sensor_custom' | sudo tee -a /etc/modules
+	8. mkdir build && cd build
+	9. cmake ../ -DCMAKE_BUILD_TYPE=Release
+	10. sudo make uninstall && make clean && make && sudo make install
+
+	// the steop 6 seems like doesn't work
+	// end up following https://github.com/IntelRealSense/realsense-ros#installation-instructions
+		sudo apt-get install ros-$ROS_DISTRO-realsense2-camera
+
+7. Install Auterion's VIO
+	1. follow instruction from https://github.com/Auterion/VIO
+	2. run this sudo apt install ros-melodic-pcl-ros  when you have error "pcl-ros" not found
+	3. sudo apt install python-catkin-tools
+	4. cd ~/catkin_ws/src
+	5. git clone https://github.com/Auterion/VIO.git
+	6. sudo apt install ros-melodic-mavros ros-melodic-mavros-extras
+	7. catkin build px4_realsense_bridge
+	
+
+
+to run:
+1. roscore
+2. roslaunch px4_realsense_bridge bridge_mavros.launch fcu_url:=serial:///dev/ttyS0:921600 gcs_url:=serial:///dev/ttyUSB0:57600
+
+FYI: how to back up pi sd cloneSDcard
+http://pi.bek.no/cloneSDcard/
+
+SITL set up.
+1. to set up JvmSim -> https://www.youtube.com/watch?v=tMbMGiMs1cQ&t=168s
+2. to set up gazebo -> http://docs.px4.io/master/en/dev_setup/dev_env_mac.html
+
+https://github.com/thien94/vision_to_mavros
+Checking EKF2 Consistency via Log Files https://mzahana.gitbooks.io/indoor-nav-at-risclab/content/feeding-mocap-data-into-pixhawk/check-ekf2-consistency.html
+321 - GPS + EV_VEL + ROTATE_EV (recommended) for EKF2_AID_MASK // https://github.com/PX4/PX4-ECL/pull/642
+
+Set up FlightPro -> go to 'https://github.com/PX4/FlightPlot'
+1. git clone --recursive https://github.com/PX4/FlightPlot.git
+2. cd FlightPlot
+3. brew install --cask adoptopenjdk
+4. brew install --cask adoptopenjdk8
+5. switch version to 8
+	export JAVA_HOME=/usr/libexec/java_home -v 1.8
+6. ant
+7. java -jar out/production/flightplot.jar
+
+Setup autoload ros on system start -> https://risc.readthedocs.io/2-auto-service-start-afer-boot.html
+1. we need to create a sh file as follow
+mkdir ~/scripts
+cd ~/scripts
+touch startup_launch.sh
+chmod +x startup_launch.sh
+
+2. page the following in the file
+#!/bin/bash
+source /opt/ros/kinetic/setup.bash
+source /home/odroid/catkin_ws/devel/setup.bash
+roslaunch mavros px4.launch
+
+3. create service file
+cd /lib/systemd/system
+sudo nano mavros.service
+
+4. paste the following
+[Unit]
+Description=mavros
+
+[Service]
+Type=forking
+ExecStart=/home/odroid/scripts/startup_launch.sh
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+
+5. run sudo systemctl daemon-reload
+6. to enable service sudo systemctl enable mavros.service
+7. to disable service sudo systemctl disable mavros.service
+
+
+HITL
+./Tools/jmavsim_run.sh -q -s -d /dev/cu.usbmodem01 -b 921600 -r 250
+
+
+ODROID ubuntu image http://de.eu.odroid.in/ubuntu_18.04lts/XU3_XU4_MC1_HC1_HC2/
+follow this to overcome not enough memory when building "catkin build" 
+	: https://github.com/IntelRealSense/realsense-ros/issues/340
+	1. cd /
+	2. sudo dd if=/dev/zero of=swapfile bs=1M count=3000
+	3. sudo mkswap swapfile
+	4. sudo swapon swapfile
+	5. sudo nano etc/fstab
+		And add the line given below. Save and close.
+		/swapfile none swap sw 0 0
+	6. That is it. You can check if the system is using the swap file you created with the command
+	   cat /proc/meminfo
+
+
+How to run SITL jmavsim.
+1. go to PX4-AutoPilot
+2. run make px4_sitl jmavsim
+3. take a look at OnBoard port something like this "mode: Onboard, data rate: 4000000 B/s on udp port 14580 remote port 14540" and take 14580.
+4. login in to pi board.
+5. run roslaunch mavros px4.launch fcu_url:="udp://:14540@192.168.1.36:14557" the ip address should be zero tier address and port should be from set 3.
+
+
+SITL in mavros
+roslaunch mavros px4.launch fcu_url:="udp://:14540@192.168.191.253:14280"
+
+
+
+
+
