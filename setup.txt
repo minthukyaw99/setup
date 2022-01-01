@@ -71,7 +71,7 @@ Set up Px4 with Intel Realsense
 
 to run:
 1. roscore
-2. roslaunch px4_realsense_bridge bridge_mavros.launch fcu_url:=serial:///dev/ttyS0:921600 gcs_url:=serial:///dev/ttyUSB0:57600
+2. roslaunch px4_realsense_bridge bridge_mavros.launch fcu_url:=serial:///dev/ttyUSB0:921600 gcs_url:=serial:///dev/ttyUSB1:57600
 
 FYI: how to back up pi sd cloneSDcard
 http://pi.bek.no/cloneSDcard/
@@ -103,8 +103,8 @@ chmod +x startup_launch.sh
 
 2. page the following in the file
 #!/bin/bash
-source /opt/ros/kinetic/setup.bash
-source /home/odroid/catkin_ws/devel/setup.bash
+source /opt/ros/melodic/setup.bash // we might need to change ros distribution name; for example: melodic or kinetic
+source /home/odroid/catkin_ws/devel/setup.bash // replace catkin_ws path
 roslaunch mavros px4.launch
 
 3. create service file
@@ -117,7 +117,7 @@ Description=mavros
 
 [Service]
 Type=forking
-ExecStart=/home/odroid/scripts/startup_launch.sh
+ExecStart=/home/odroid/scripts/startup_launch.sh // replace start up script path
 Restart=on-failure
 
 [Install]
@@ -156,6 +156,24 @@ How to run SITL jmavsim.
 
 SITL in mavros
 roslaunch mavros px4.launch fcu_url:="udp://:14540@192.168.191.253:14280"
+
+MC_YAWRATE_MAX --> yaw rate
+MPC_Z_VEL_MAX_UP --> go up rate
+
+
+INSTALLING pymap3d --> https://github.com/geospace-code/pymap3d
+sudo apt-get install python3-pip
+python3 -m pip install pymap3d
+
+Flight modes:
+
+http://wiki.ros.org/mavros/CustomModes#PX4_native_flight_stack
+
+
+CAMERA HOLDER 3D STIL
+https://www.dropbox.com/s/e3ias30czsn2q4t/Intel_RealSense_Tracking_Camera_T265_holder.STL?dl=0
+
+
 
 
 
