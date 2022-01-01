@@ -173,8 +173,9 @@ http://wiki.ros.org/mavros/CustomModes#PX4_native_flight_stack
 CAMERA HOLDER 3D STIL
 https://www.dropbox.com/s/e3ias30czsn2q4t/Intel_RealSense_Tracking_Camera_T265_holder.STL?dl=0
 
-
-
+KIMERA-VIO
+https://github.com/MIT-SPARK/Kimera-VIO-ROS
+https://www.youtube.com/watch?v=Zjevg5wQTdI
 
 
 
