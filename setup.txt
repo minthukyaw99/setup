@@ -177,6 +177,16 @@ KIMERA-VIO
 https://github.com/MIT-SPARK/Kimera-VIO-ROS
 https://www.youtube.com/watch?v=Zjevg5wQTdI
 
+JETSON-VIO 
+https://www.youtube.com/watch?v=5Ndi9IYpI68
+
+Using Vision-to-mavors.
+1. go to https://github.com/thien94/vision_to_mavros
+2. git clone 
+3. in jetson nano we need to symblink sudo ln -s /usr/include/opencv4/opencv2/ /usr/include/opencv https://answers.ros.org/question/199279/installation-from-source-fails-because-of-cv_bridge-include-dir/
+4. catkin build
+5. follow for detail https://ardupilot.org/dev/docs/ros-vio-tracking-camera.html
+
 
 
 
