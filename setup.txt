@@ -152,7 +152,9 @@ How to run SITL jmavsim.
 3. take a look at OnBoard port something like this "mode: Onboard, data rate: 4000000 B/s on udp port 14580 remote port 14540" and take 14580.
 4. login in to pi board.
 5. run roslaunch mavros px4.launch fcu_url:="udp://:14540@192.168.1.36:14557" the ip address should be zero tier address and port should be from set 3.
-
+6. 
+export PX4_HOME_LAT= 40.52653186656456
+export PX4_HOME_LON= -74.37792344364426
 
 SITL in mavros
 roslaunch mavros px4.launch fcu_url:="udp://:14540@192.168.191.253:14280"
@@ -173,10 +175,6 @@ http://wiki.ros.org/mavros/CustomModes#PX4_native_flight_stack
 CAMERA HOLDER 3D STIL
 https://www.dropbox.com/s/e3ias30czsn2q4t/Intel_RealSense_Tracking_Camera_T265_holder.STL?dl=0
 
-KIMERA-VIO
-https://github.com/MIT-SPARK/Kimera-VIO-ROS
-https://www.youtube.com/watch?v=Zjevg5wQTdI
-
 JETSON-VIO 
 https://www.youtube.com/watch?v=5Ndi9IYpI68
 
@@ -186,6 +184,43 @@ Using Vision-to-mavors.
 3. in jetson nano we need to symblink sudo ln -s /usr/include/opencv4/opencv2/ /usr/include/opencv https://answers.ros.org/question/199279/installation-from-source-fails-because-of-cv_bridge-include-dir/
 4. catkin build
 5. follow for detail https://ardupilot.org/dev/docs/ros-vio-tracking-camera.html
+
+
+roslaunch realsense2_camera rs_t265.launch
+roslaunch mavros apm.launch fcu_url:=serial:///dev/ttyUSB0:921600 gcs_url:=serial:///dev/ttyTHS1:57600
+roslaunch vision_to_mavros t265_tf_to_mavros.launch
+
+
+max 1950
+min 1075
+
+// to clean catkin
+catkin clean --all -y
+
+Setting up PX4 in catkin
+1. cd ~/catkin_ws/src
+2. git clone https://github.com/PX4/PX4-Autopilot.git --recursive
+3. catkin clean --all -y
+4. catkin build
+5. if we have kconfiglib error try to play with this python version
+	sudo update-alternatives --install /usr/bin/python python /usr/bin/python2.7 20
+	sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.6 10 
+	// https://askubuntu.com/questions/1065572/how-to-safely-switch-to-python3-as-default-after-upgrade-to-ubuntu-18-04
+	/usr/local/bin/python3 -m pip install kconfiglib
+	/usr/local/bin/python2 -m pip install kconfiglib
+
+Setting up mavlink_sitl_gazebo
+1. cd ~/catkin_ws/src
+2. git clone https://github.com/PX4/PX4-SITL_gazebo.git
+3. git checkout 1f3f1b1dec5a31c2c400f141fc344f11f68659c9 // switch the this commit
+// Unable to locate package g++-multilib
+sudo apt-get install -y gcc++-multilib
+
+
+
+
+
+
 
 
 
